@@ -25,7 +25,16 @@ SECRET_KEY = 'django-insecure-@+5^a$ealy$y)oyx0l!mierz+y)h=pmn&^o@=1z)ee(w+%(gri
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+# Add 192.168.5.0/24 subnet to allowed hosts
+try:
+    import ipaddress
+    subnet = ipaddress.ip_network('192.168.5.0/24', strict=False)
+    # Include all usable hosts in the subnet
+    ALLOWED_HOSTS += [str(ip) for ip in subnet.hosts()]
+except Exception:
+    pass
 
 
 # Application definition
