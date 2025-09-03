@@ -4,7 +4,8 @@ FROM python:3.13-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=Dashboard.settings
+    DJANGO_SETTINGS_MODULE=Dashboard.settings \
+    DOCKER_ENV=1
 
 # Set work directory
 WORKDIR /app

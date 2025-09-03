@@ -42,12 +42,14 @@ docker build -t django-dashboard .
 
 # Run the container
 docker run -p 8000:8000 \
-  -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+  -v $(pwd)/data:/app/data \
+  -e DOCKER_ENV=1 \
   django-dashboard
 
 # Run in background
 docker run -d -p 8000:8000 \
-  -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+  -v $(pwd)/data:/app/data \
+  -e DOCKER_ENV=1 \
   --name dashboard \
   django-dashboard
 ```
@@ -81,8 +83,9 @@ docker run -p 8000:8000 \
 ## Data Persistence
 
 The Docker setup includes:
-- **SQLite Database**: Mounted as a volume to persist data
+- **SQLite Database**: Stored in `/data` directory, mounted as a volume to persist data
 - **Static Files**: Collected automatically on startup
+- **Automatic Database Creation**: Database file is created automatically if it doesn't exist
 
 ## Development vs Production
 
@@ -100,7 +103,8 @@ cd Dashboard
 docker run -p 8000:8000 \
   -e DEBUG=0 \
   -e ALLOWED_HOSTS=your-domain.com \
-  -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+  -e DOCKER_ENV=1 \
+  -v $(pwd)/data:/app/data \
   django-dashboard
 ```
 

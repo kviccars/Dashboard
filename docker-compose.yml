@@ -8,9 +8,10 @@ services:
     environment:
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=Dashboard.settings
+      - DOCKER_ENV=1
     volumes:
-      # Mount database file to persist data
-      - ./db.sqlite3:/app/db.sqlite3
+      # Mount data directory to persist database
+      - ./data:/app/data
       # Optional: Mount static files for development
       - static_volume:/app/staticfiles
     restart: unless-stopped

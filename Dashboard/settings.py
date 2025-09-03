@@ -73,12 +73,25 @@ WSGI_APPLICATION = 'Dashboard.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import os
+
+# Database configuration - use different paths for Docker vs local development
+if os.environ.get('DOCKER_ENV') == '1':
+    # Docker environment - use /app/data directory
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/app/data/db.sqlite3',
+        }
     }
-}
+else:
+    # Local development - use project directory
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
