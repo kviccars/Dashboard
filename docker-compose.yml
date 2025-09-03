@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=Dashboard.settings
+    volumes:
+      # Mount database file to persist data
+      - ./db.sqlite3:/app/db.sqlite3
+      # Optional: Mount static files for development
+      - static_volume:/app/staticfiles
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  static_volume:
