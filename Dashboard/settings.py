@@ -128,7 +128,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# Configure STATIC_ROOT so collectstatic can write files
+if os.environ.get('DOCKER_ENV') == '1':
+    # In Docker, write to the mounted static volume
+    STATIC_ROOT = '/app/staticfiles'
+else:
+    # Local development default
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
