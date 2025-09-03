@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load m365_extras %}
+
+{% block title %}Charts{% endblock %}
+
+{% block content %}
+<h1>Timesheet Charts</h1>
+
+<!-- Author Filter -->
+<form method="get" style="margin-bottom: 24px; padding: 16px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <label for="author" style="font-weight: bold;">Filter by Author:</label>
+    <select name="author" id="author" style="padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+      <option value="">All Authors</option>
+      {% for author in authors %}
+        <option value="{{ author }}" {% if author == author_filter %}selected{% endif %}>{{ author }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" style="padding: 6px 16px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply Filter</button>
+    <a href="?" style="padding: 6px 16px; text-decoration: none; border: 1px solid #ccc; background: #fff; border-radius: 4px;">Clear</a>
+  </div>
+</form>
+
+  <!-- Charts Container -->
+<div style="display: grid; grid-template-columns: 1fr 300px; gap: 24px; margin-bottom: 24px;">
+  <!-- Pie Chart -->
+  <div style="background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h2 style="margin-top: 0; text-align: center;">Billable vs Non-Billable Hours</h2>
+    {% if pie_chart_data.data %}
+      <div style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
+        <canvas id="billableChart" width="400" height="400"></canvas>
+      </div>
+    {% else %}
+      <p style="text-align: center; color: #666; font-style: italic;">No data available for the selected filter.</p>
+    {% endif %}
+  </div>
+
+  <!-- Summary Stats -->
+  <div style="background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h3 style="margin-top: 0;">Summary</h3>
+    <div style="margin-bottom: 16px;">
+      <strong>Total Hours:</strong> {{ total_hours }}h
+    </div>
+    <div style="margin-bottom: 16px;">
+      <strong>Total Items:</strong> {{ total_items }}
+    </div>
+    {% if author_filter %}
+      <div style="margin-bottom: 16px; padding: 8px; background: #e7f3ff; border-left: 4px solid #0078d4; border-radius: 4px;">
+        <strong>Filtered by:</strong> {{ author_filter }}
+      </div>
+    {% endif %}
+    
+    <div style="margin-top: 20px;">
+      <h4 style="margin-bottom: 12px;">Hours Breakdown:</h4>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% if billable_hours.True > 0 %}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background: #107c10; border-radius: 3px;"></div>
+            <span><strong>Billable:</strong> {{ billable_hours.True }}h</span>
+          </div>
+        {% endif %}
+        {% if billable_hours.False > 0 %}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background: #d83b01; border-radius: 3px;"></div>
+            <span><strong>Non-Billable:</strong> {{ billable_hours.False }}h</span>
+          </div>
+        {% endif %}
+        {% if billable_hours.Unknown > 0 %}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background: #605e5c; border-radius: 3px;"></div>
+            <span><strong>Unknown:</strong> {{ billable_hours.Unknown }}h</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Trend Chart -->
+<div style="background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 24px;">
+  <h2 style="margin-top: 0; text-align: center;">Monthly Hours Trend</h2>
+  {% if monthly_chart_data.labels %}
+    <div style="position: relative; width: 100%; height: 400px;">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  {% else %}
+    <p style="text-align: center; color: #666; font-style: italic;">No monthly data available for the selected filter.</p>
+  {% endif %}
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Pie Chart
+{% if pie_chart_data.data %}
+  // Pie chart data from Django
+  const pieChartData = {
+    labels: {{ pie_chart_data.labels|safe }},
+    datasets: [{
+      data: {{ pie_chart_data.data|safe }},
+      backgroundColor: {{ pie_chart_data.colors|safe }},
+      borderWidth: 2,
+      borderColor: '#ffffff'
+    }]
+  };
+
+  // Pie chart configuration
+  const pieConfig = {
+    type: 'pie',
+    data: pieChartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+            font: {
+              size: 14
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${percentage}%`;
+            }
+          }
+        }
+      }
+    }
+  };
+
+  // Create the pie chart
+  const pieCtx = document.getElementById('billableChart').getContext('2d');
+  const billableChart = new Chart(pieCtx, pieConfig);
+{% endif %}
+
+// Monthly Trend Chart
+{% if monthly_chart_data.labels %}
+  // Monthly chart data from Django
+  const monthlyChartData = {
+    labels: {{ monthly_chart_data.labels|safe }},
+    datasets: [
+      {
+        label: 'Billable Hours',
+        data: {{ monthly_chart_data.billable|safe }},
+        backgroundColor: 'rgba(16, 124, 16, 0.8)',
+        borderColor: '#107c10',
+        borderWidth: 2,
+        type: 'bar'
+      },
+      {
+        label: 'Non-Billable Hours',
+        data: {{ monthly_chart_data.non_billable|safe }},
+        backgroundColor: 'rgba(216, 59, 1, 0.8)',
+        borderColor: '#d83b01',
+        borderWidth: 2,
+        type: 'bar'
+      },
+      {
+        label: 'Total Hours',
+        data: {{ monthly_chart_data.total|safe }},
+        backgroundColor: 'transparent',
+        borderColor: '#0078d4',
+        borderWidth: 3,
+        type: 'line',
+        tension: 0.4,
+        pointBackgroundColor: '#0078d4',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 6
+      }
+    ]
+  };
+
+  // Monthly chart configuration
+  const monthlyConfig = {
+    type: 'bar',
+    data: monthlyChartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+            font: {
+              size: 14
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.parsed.y}h`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Month',
+            font: {
+              size: 14,
+              weight: 'bold'
+            }
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Hours',
+            font: {
+              size: 14,
+              weight: 'bold'
+            }
+          },
+          beginAtZero: true
+        }
+      }
+    }
+  };
+
+  // Create the monthly chart
+  const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+  const monthlyChart = new Chart(monthlyCtx, monthlyConfig);
+{% endif %}
+</script>
+
+{% endblock %}

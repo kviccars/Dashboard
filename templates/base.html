@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">Dashboard</div>
+                    <nav class="nav">
+                <a href="{% url 'home' %}">Home</a>
+                <a href="{% url 'settings' %}">Settings</a>
+                <a href="{% url 'm365_lists' %}">Tables</a>
+                <a href="{% url 'm365_timesheet' %}">Timesheet</a>
+                <a href="{% url 'm365_charts' %}">Charts</a>
+                <a href="{% url 'm365_debug_columns' %}">Debug Columns</a>
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit">Logout</button>
+            </form>
+          {% else %}
+            <a href="{% url 'login' %}">Login</a>
+          {% endif %}
+        </nav>
+      </aside>
+      <main class="content">
+        {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <style>
+      .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .sidebar { background: #f5f5f7; padding: 16px; border-right: 1px solid #e5e5e5; }
+      .brand { font-weight: 600; margin-bottom: 12px; }
+      .nav a { display: block; padding: 8px 0; color: #222; text-decoration: none; }
+      .nav a:hover { text-decoration: underline; }
+      .nav form { margin-top: 8px; }
+      .nav button { cursor: pointer; }
+      .content { padding: 24px; }
+      .messages { list-style: none; padding: 0; margin: 0 0 12px; }
+      .messages li { background: #eef; border: 1px solid #cde; padding: 8px; margin-bottom: 6px; }
+    </style>
+  </body>
+</html>
+
+

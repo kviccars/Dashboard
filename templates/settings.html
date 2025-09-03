@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+
+<h2>Microsoft 365 Connection</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" name="action" value="save">Save</button>
+  <button type="submit" name="action" value="test">Save & Test Connection</button>
+</form>
+
+<p>
+  After saving and testing the connection, you can try fetching SharePoint lists:
+  <a href="{% url 'm365_lists' %}">View SharePoint Lists</a>
+  (requires Sites.Read.All or higher via app permissions)
+  
+</p>
+{% endblock %}
+
+

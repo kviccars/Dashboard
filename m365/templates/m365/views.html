@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}List Views{% endblock %}
+
+{% block content %}
+<h1>List Views</h1>
+{% if views %}
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>Default</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in views %}
+        <tr>
+          <td>{{ v.displayName }}</td>
+          <td>{{ v.id }}</td>
+          <td>{{ v.isDefaultView }}</td>
+          <td>{{ v.viewTypeKind }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No views found.</p>
+{% endif %}
+{% endblock %}
+
+

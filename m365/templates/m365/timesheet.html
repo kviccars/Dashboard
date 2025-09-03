@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load m365_extras %}
+
+{% block title %}Timesheet{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <h1 style="margin: 0;">Timesheet</h1>
+  <div style="display: flex; gap: 8px;">
+    <button type="button" onclick="setLastMonth()" style="padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer;">Last Month</button>
+    <button type="button" onclick="setThisMonth()" style="padding: 8px 16px; background: #107c10; color: white; border: none; border-radius: 4px; cursor: pointer;">This Month</button>
+    <button type="button" onclick="setConsulting()" style="padding: 8px 16px; background: #8b5a2b; color: white; border: none; border-radius: 4px; cursor: pointer;">Consulting</button>
+    <button type="button" onclick="setITConsulting()" style="padding: 8px 16px; background: #6a5acd; color: white; border: none; border-radius: 4px; cursor: pointer;">IT Consulting</button>
+    <button type="button" onclick="setEndUserSupport()" style="padding: 8px 16px; background: #d83b01; color: white; border: none; border-radius: 4px; cursor: pointer;">End User Support</button>
+  </div>
+</div>
+
+<form method="get" style="margin-bottom:16px; border: 1px solid #ddd; padding: 12px; background: #f9f9f9;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+    <div>
+      <label>Search:</label><br>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search all fields..." style="width: 100%;" />
+    </div>
+    <div>
+      <label>Author:</label><br>
+      <select name="author" style="width: 100%;">
+        <option value="">All Authors</option>
+        {% for a in authors %}
+          <option value="{{ a }}" {% if a == author_filter %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Customer:</label><br>
+      <select name="customer" style="width: 100%;">
+        <option value="">All Customers</option>
+        {% for c in customers %}
+          <option value="{{ c }}" {% if c == customer_filter %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+    <div>
+      <label>Code (Ctrl+Click for multiple):</label><br>
+      <select name="code" multiple style="width: 100%; height: 80px;">
+        {% for c in codes %}
+          <option value="{{ c }}" {% if c in code_filters %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Date From:</label><br>
+      <input type="date" name="date_from" value="{{ date_from }}" style="width: 100%;" />
+    </div>
+    <div>
+      <label>Date To:</label><br>
+      <input type="date" name="date_to" value="{{ date_to }}" style="width: 100%;" />
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+    <div>
+      <label>Billable:</label><br>
+      <select name="billable" style="width: 100%;">
+        <option value="">All</option>
+        {% for b in billable_options %}
+          <option value="{{ b }}" {% if b == billable_filter %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Page Size:</label><br>
+      <select name="page_size" style="width: 100%;">
+        <option value="10" {% if page_size == 10 %}selected{% endif %}>10 per page</option>
+        <option value="25" {% if page_size == 25 %}selected{% endif %}>25 per page</option>
+        <option value="50" {% if page_size == 50 %}selected{% endif %}>50 per page</option>
+        <option value="100" {% if page_size == 100 %}selected{% endif %}>100 per page</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: end; gap: 8px;">
+      <button type="submit" style="padding: 6px 12px;">Apply Filters</button>
+      <a href="?" style="padding: 6px 12px; text-decoration: none; border: 1px solid #ccc; background: #fff;">Clear</a>
+      <div style="padding: 6px 12px; border: 2px solid #007cba; background: #e7f3ff; font-weight: bold; border-radius: 4px;">
+        Total Hours: {{ total_hours }}
+      </div>
+    </div>
+  </div>
+  <input type="hidden" name="page" value="1" />
+  <input type="hidden" name="sort" value="{{ sort_by }}" />
+  <input type="hidden" name="desc" value="{{ sort_desc|yesno:'true,false' }}" />
+</form>
+
+<table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+  <thead style="background: #f5f5f5;">
+    <tr>
+      {% for col in columns %}
+        <th style="text-align: left; cursor: pointer;" onclick="sortBy('{{ col }}')">
+          {{ col }}
+          {% if sort_by == col %}
+            {% if sort_desc %}▼{% else %}▲{% endif %}
+          {% endif %}
+        </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        {% for col in columns %}
+          <td>{{ row|get_item:col }}</td>
+        {% endfor %}
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="{{ columns|length }}">No items found.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="margin-top:16px; display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    {% if total %}
+      Showing {{ rows|length }} of {{ total }} entries
+    {% endif %}
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px;">
+    {% if has_prev %}
+      <a href="?page=1&page_size={{ page_size }}&search={{ search }}&author={{ author_filter }}&customer={{ customer_filter }}{% for c in code_filters %}&code={{ c }}{% endfor %}&billable={{ billable_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}&desc={{ sort_desc|yesno:'true,false' }}">First</a>
+      <a href="?page={{ page|add:-1 }}&page_size={{ page_size }}&search={{ search }}&author={{ author_filter }}&customer={{ customer_filter }}{% for c in code_filters %}&code={{ c }}{% endfor %}&billable={{ billable_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}&desc={{ sort_desc|yesno:'true,false' }}">Prev</a>
+    {% endif %}
+    
+    <span>Page</span>
+    <input type="number" id="pageInput" value="{{ page }}" min="1" max="{{ total_pages }}" style="width: 60px; text-align: center;" onchange="goToPage(this.value)">
+    <span>of {{ total_pages }}</span>
+    
+    {% if has_next %}
+      <a href="?page={{ page|add:1 }}&page_size={{ page_size }}&search={{ search }}&author={{ author_filter }}&customer={{ customer_filter }}{% for c in code_filters %}&code={{ c }}{% endfor %}&billable={{ billable_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}&desc={{ sort_desc|yesno:'true,false' }}">Next</a>
+      <a href="?page={{ total_pages }}&page_size={{ page_size }}&search={{ search }}&author={{ author_filter }}&customer={{ customer_filter }}{% for c in code_filters %}&code={{ c }}{% endfor %}&billable={{ billable_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={{ sort_by }}&desc={{ sort_desc|yesno:'true,false' }}">Last</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function sortBy(column) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentSort = urlParams.get('sort');
+  const currentDesc = urlParams.get('desc') === 'true';
+  
+  if (currentSort === column) {
+    urlParams.set('desc', currentDesc ? 'false' : 'true');
+  } else {
+    urlParams.set('sort', column);
+    urlParams.set('desc', 'false');
+  }
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+
+function goToPage(pageNum) {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('page', pageNum);
+  window.location.search = urlParams.toString();
+}
+
+function setLastMonth() {
+  const today = new Date();
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+  
+  const dateFrom = lastMonth.toISOString().split('T')[0];
+  const dateTo = lastDayOfLastMonth.toISOString().split('T')[0];
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('date_from', dateFrom);
+  urlParams.set('date_to', dateTo);
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+
+function setThisMonth() {
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  const dateFrom = firstDayOfMonth.toISOString().split('T')[0];
+  const dateTo = lastDayOfMonth.toISOString().split('T')[0];
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('date_from', dateFrom);
+  urlParams.set('date_to', dateTo);
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+
+function setConsulting() {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('billable', 'True');
+  urlParams.set('code', 'FBA');
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+
+function setITConsulting() {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('billable', 'True');
+  urlParams.set('code', 'IT');
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+
+function setEndUserSupport() {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('billable', 'False');
+  urlParams.delete('code');  // Clear the code filter
+  urlParams.set('page', '1');
+  
+  window.location.search = urlParams.toString();
+}
+</script>
+
+{% endblock %}
+
+

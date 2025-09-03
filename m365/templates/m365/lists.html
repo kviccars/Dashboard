@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}SharePoint Lists{% endblock %}
+
+{% block content %}
+<h1>SharePoint Lists</h1>
+{% if lists %}
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>List Type</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lists %}
+        <tr>
+          <td><a href="{% url 'm365_list_views' l.id %}">{{ l.displayName }}</a></td>
+          <td>{{ l.id }}</td>
+          <td>{% firstof l.list.template l.list.templateName "n/a" %}</td>
+          <td>{{ l.createdDateTime }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No lists found.</p>
+{% endif %}
+{% endblock %}
+
+
