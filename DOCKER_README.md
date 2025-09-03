@@ -40,15 +40,17 @@ cd Dashboard
 # Build the image
 docker build -t django-dashboard .
 
-# Run the container
+# Run the container (uses a named volume for DB persistence)
+docker volume create dashboard_db_data
 docker run -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
+  -v dashboard_db_data:/app/data \
   -e DOCKER_ENV=1 \
+  --name dashboard \
   django-dashboard
 
 # Run in background
 docker run -d -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
+  -v dashboard_db_data:/app/data \
   -e DOCKER_ENV=1 \
   --name dashboard \
   django-dashboard
@@ -104,7 +106,8 @@ docker run -p 8000:8000 \
   -e DEBUG=0 \
   -e ALLOWED_HOSTS=your-domain.com \
   -e DOCKER_ENV=1 \
-  -v $(pwd)/data:/app/data \
+  -v dashboard_db_data:/app/data \
+  --name dashboard \
   django-dashboard
 ```
 

@@ -35,7 +35,8 @@ RUN adduser --disabled-password --gecos '' appuser \
     && mkdir -p /app/data \
     && chown -R appuser:appuser /app \
     && chown appuser:appuser /entrypoint.sh
-USER appuser
+# Run as root to manage mounted volume permissions; Gunicorn will drop privileges
+USER root
 
 # Expose port
 EXPOSE 8000
@@ -46,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Set entrypoint and default command
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "Dashboard.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--user", "appuser", "--group", "appuser", "Dashboard.wsgi:application"]

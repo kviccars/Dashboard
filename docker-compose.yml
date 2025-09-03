@@ -10,8 +10,8 @@ services:
       - DJANGO_SETTINGS_MODULE=Dashboard.settings
       - DOCKER_ENV=1
     volumes:
-      # Mount data directory to persist database
-      - ./data:/app/data
+      # Use named volume for database persistence (avoids host permission issues)
+      - db_data:/app/data
       # Optional: Mount static files for development
       - static_volume:/app/staticfiles
     restart: unless-stopped
@@ -23,4 +23,5 @@ services:
       start_period: 40s
 
 volumes:
+  db_data:
   static_volume:
