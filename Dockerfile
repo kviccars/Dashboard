@@ -30,8 +30,9 @@ RUN chmod +x /entrypoint.sh
 # Copy Django project
 COPY . .
 
-# Create a non-root user
+# Create a non-root user and setup directories
 RUN adduser --disabled-password --gecos '' appuser \
+    && mkdir -p /app/data \
     && chown -R appuser:appuser /app \
     && chown appuser:appuser /entrypoint.sh
 USER appuser

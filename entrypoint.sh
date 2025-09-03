@@ -5,17 +5,13 @@ set -e
 
 echo "Starting Django application..."
 
-# Create database directory if it doesn't exist
+# Ensure database directory exists (should already exist from Dockerfile)
 mkdir -p /app/data
-
-# Set proper permissions for the database directory
-chmod 755 /app/data
 
 # Check if database file exists, if not create it
 if [ ! -f "/app/data/db.sqlite3" ]; then
     echo "Creating new database file..."
     touch /app/data/db.sqlite3
-    chmod 664 /app/data/db.sqlite3
 fi
 
 # Run database migrations
